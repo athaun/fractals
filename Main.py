@@ -1,5 +1,10 @@
 import Fractal_Logic as fl
 import tkinter as tk
+import math
+from collections import deque
+
+# Specify up to what stage (DO NOT RECOMMEND MORE THAN 4)
+STAGE = 3
 
 # Tile size and locations
 TILE_SIZE = 30
@@ -9,7 +14,184 @@ def get_tag(x, y):
     return str(x) + ',' + str(y)
 
 def get_xy(x, y):
-    return [60 * round(x / 60), 60 * round(y / 60)]
+    return [(TILE_SIZE * 2) * round(x / (TILE_SIZE * 2)), (TILE_SIZE * 2) * round(y / (TILE_SIZE * 2))]
+
+# Create seed given tile positions
+def create_seed(tile_positions, origin_tile_cords):
+    new_tiles = dict([])
+    stack = deque()
+    stack.append([origin_tile_cords[0], origin_tile_cords[1], None])
+    seed_tile = None
+
+    min_x, max_x, min_y, max_y = math.inf, -1, math.inf, -1
+
+    while len(stack) > 0:
+        [x,y, prev] = stack.pop()
+        next = []
+
+        if x < min_x: min_x = x
+        if x > max_x: max_x = x
+        if y < min_y: min_y = y
+        if y > max_y: max_y = y
+
+        if get_tag(x+TILE_SIZE*2, y) in tile_positions: 
+            stack.append([x+TILE_SIZE*2, y, 'W'])
+            next.append('E')
+        if get_tag(x, y-TILE_SIZE*2) in tile_positions: 
+            stack.append([x, y-TILE_SIZE*2, 'S'])
+            next.append('N')
+        if get_tag(x-TILE_SIZE*2, y) in tile_positions: 
+            stack.append([x-TILE_SIZE*2, y, 'E'])
+            next.append('W')
+        if get_tag(x, y+TILE_SIZE*2) in tile_positions: 
+            stack.append([x, y+TILE_SIZE*2, 'N'])
+            next.append('S')
+
+        del tile_positions[get_tag(x,y)]
+
+        if len(next) == 0: next = None
+
+        tile = fl.Tile(prev, next)
+        if prev == None or next == None: tile.terminal = True
+        new_tiles[get_tag(x,y)] = tile
+
+        if prev == 'N':
+            tile.tile_to_N = new_tiles[get_tag(x,y-TILE_SIZE*2)] 
+            new_tiles[get_tag(x,y-TILE_SIZE*2)].tile_to_S = tile
+
+            tile.N = 'N' 
+        if prev == 'E':
+            tile.tile_to_E = new_tiles[get_tag(x+TILE_SIZE*2,y)] 
+            new_tiles[get_tag(x+TILE_SIZE*2,y)].tile_to_W = tile
+
+            tile.E = 'N' 
+        if prev == 'W':
+            tile.tile_to_W = new_tiles[get_tag(x-TILE_SIZE*2,y)] 
+            new_tiles[get_tag(x-TILE_SIZE*2,y)].tile_to_E = tile
+
+            tile.W = 'N' 
+        if prev == 'S':
+            tile.tile_to_S = new_tiles[get_tag(x,y+TILE_SIZE*2)] 
+            new_tiles[get_tag(x,y+TILE_SIZE*2)].tile_to_N = tile
+
+            tile.S = 'N' 
+
+        if next != None: 
+            for d in next: 
+                if d == 'N': tile.N = 'N'
+                if d == 'E': tile.E = 'N'
+                if d == 'W': tile.W = 'N'
+                if d == 'S': tile.S = 'N'
+
+        if [x,y] == origin_tile_cords: seed_tile = tile
+
+    # Decide key tiles:
+    ktn, kte, ktw, kts = None, None, None, None
+
+    for cord in new_tiles:
+        [x,y] = cord.split(',')
+        x, y = int(x), int(y)
+
+        if (x == min_x and get_tag(max_x, y) in new_tiles) or (x == max_x and get_tag(min_x, y) in new_tiles):
+            ktw, kte = new_tiles[get_tag(min_x, y)], new_tiles[get_tag(max_x, y)]
+        if (y == min_y and get_tag(x, max_y) in new_tiles) or (y == max_y and get_tag(x, min_y) in new_tiles):
+            ktn, kts = new_tiles[get_tag(x, min_y)], new_tiles[get_tag(x, max_y)]
+
+    seed_tile.original_seed = True
+
+    # North
+    visited_tiles = []
+    stack = deque()
+    stack.append(ktn)
+    while len(stack) > 0:
+        cur_tile = stack.pop()
+        visited_tiles.append(cur_tile)
+
+        if cur_tile.next != None:
+            for n in cur_tile.next: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_N = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+        if cur_tile.previous != None:
+            for n in cur_tile.previous: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_N = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+    # East
+    visited_tiles = []
+    stack = deque()
+    stack.append(kte)
+    while len(stack) > 0:
+        cur_tile = stack.pop()
+        visited_tiles.append(cur_tile)
+
+        if cur_tile.next != None:
+            for n in cur_tile.next: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_E = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+        if cur_tile.previous != None:
+            for n in cur_tile.previous: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_E = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+    # West
+    visited_tiles = []
+    stack = deque()
+    stack.append(ktw)
+    while len(stack) > 0:
+        cur_tile = stack.pop()
+        visited_tiles.append(cur_tile)
+
+        if cur_tile.next != None:
+            for n in cur_tile.next: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_W = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+        if cur_tile.previous != None:
+            for n in cur_tile.previous: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_W = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+    # South
+    visited_tiles = []
+    stack = deque()
+    stack.append(kts)
+    while len(stack) > 0:
+        cur_tile = stack.pop()
+        visited_tiles.append(cur_tile)
+
+        if cur_tile.next != None:
+            for n in cur_tile.next: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_S = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+        if cur_tile.previous != None:
+            for n in cur_tile.previous: 
+                adj_tile = fl.retrieve_tile(cur_tile, n)
+                if adj_tile not in visited_tiles:
+                    adj_tile.key_tile_S = [fl.opp(n)]
+                    stack.append(adj_tile)
+
+    # Run simulation
+    result = fl.run_simulation(seed_tile, STAGE)
+
+    # Plot the result onto graph
+    fl.plot_graph(seed_tile)
 
 # Main
 class main(tk.Tk):
@@ -46,7 +228,8 @@ class main(tk.Tk):
 
     def finish(self):
         if self.origin_tile != None:
-            print('Done!')
+            create_seed(self.tile_positions, self.origin_tile)
+            self.destroy()
 
 class draw_seed(tk.Frame):
     def __init__(self, parent, controller):
@@ -135,7 +318,7 @@ class choose_origin(tk.Frame):
                 tile = canvas.create_rectangle(x - TILE_SIZE, y - TILE_SIZE, x + TILE_SIZE, y + TILE_SIZE, fill='black')
                 controller.tile_positions[get_tag(x,y)] = (tile, x, y, 1)
 
-                controller.origin_tile = tile
+                controller.origin_tile = [x, y]
         
         canvas.bind("<Button-1>", choosing_tile)
 
