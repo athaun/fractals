@@ -1,5 +1,5 @@
 # Running Code: 
 
-Currently working on an interface to allow for other generators. 
+Runs from main.py
 
-To run one of the examples in Main.py, uncomment out the block of code corresponding to the example to be run. To specify stage, change the 2nd parameter in the run_simulation call in main.py (note: recommend to use smaller numbers since the time to completion grows exponentially) 
+To change the length of simulation, update the STAGE variable in main.py (recommended to keep within 1-4 stages as time to completion grows exponentially)
