@@ -34,12 +34,12 @@ def create_seed(tile_positions, origin_tile_cords):
         if y < min_y: min_y = y
         if y > max_y: max_y = y
 
-        if get_tag(x+TILE_SIZE*2, y) in tile_positions: 
-            stack.append([x+TILE_SIZE*2, y, 'W'])
-            next.append('E')
         if get_tag(x, y-TILE_SIZE*2) in tile_positions: 
             stack.append([x, y-TILE_SIZE*2, 'S'])
             next.append('N')
+        if get_tag(x+TILE_SIZE*2, y) in tile_positions: 
+            stack.append([x+TILE_SIZE*2, y, 'W'])
+            next.append('E')
         if get_tag(x-TILE_SIZE*2, y) in tile_positions: 
             stack.append([x-TILE_SIZE*2, y, 'E'])
             next.append('W')
@@ -51,7 +51,9 @@ def create_seed(tile_positions, origin_tile_cords):
 
         if len(next) == 0: next = None
 
-        tile = fl.Tile(prev, next)
+        if prev == None: tile = fl.Tile(prev, next)
+        else: tile = fl.Tile([prev], next)
+
         if prev == None or next == None: tile.terminal = True
         new_tiles[get_tag(x,y)] = tile
 
@@ -83,7 +85,10 @@ def create_seed(tile_positions, origin_tile_cords):
                 if d == 'W': tile.W = 'N'
                 if d == 'S': tile.S = 'N'
 
-        if [x,y] == origin_tile_cords: seed_tile = tile
+        if [x,y] == origin_tile_cords: 
+            seed_tile = tile
+            tile.original_seed = True
+            if len(tile.next) > 1: tile.terminal = False
 
     # Decide key tiles:
     ktn, kte, ktw, kts = None, None, None, None
@@ -97,7 +102,10 @@ def create_seed(tile_positions, origin_tile_cords):
         if (y == min_y and get_tag(x, max_y) in new_tiles) or (y == max_y and get_tag(x, min_y) in new_tiles):
             ktn, kts = new_tiles[get_tag(x, min_y)], new_tiles[get_tag(x, max_y)]
 
-    seed_tile.original_seed = True
+    ktn.key_tile_N = None
+    kte.key_tile_E = None
+    ktw.key_tile_W = None
+    kts.key_tile_S = None
 
     # North
     visited_tiles = []

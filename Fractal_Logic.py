@@ -117,8 +117,7 @@ def plot_graph(seed_tile):
         cur_tile = stack.pop()
 
         # Debug
-        print("Printing:", cur_tile[0].next, cur_tile[0].previous, cur_tile[0].N, cur_tile[0].E, cur_tile[0].W, cur_tile[0].S)
-
+        # print("Printing:", cur_tile[0].next, cur_tile[0].previous, cur_tile[0].N, cur_tile[0].E, cur_tile[0].W, cur_tile[0].S)
         x.append(cur_tile[1])
         y.append(cur_tile[2])
         num_tiles += 1
@@ -1561,7 +1560,7 @@ def copy_assembly(tile, d):
     starting_tile = tile
     while not is_assembly_finished(starting_tile):
         # copy tile
-        print("------------------- copying tile: ", tile.next, tile.previous)
+        # print("------------------- copying tile: ", tile.next, tile.previous)
         is_pseudo_seed = copy_tile(tile, d, pseudo_seed, starting_tile)
 
         if is_pseudo_seed != None: 
@@ -1653,11 +1652,11 @@ def copy_assembly(tile, d):
             tile.N = 'Y'
             
         else: 
-            print("Broke:", tile.next, tile.previous)
+            # print("Broke:", tile.next, tile.previous)
             break
 
 
-        print('new tile to copy: ', tile.next, tile.previous)
+        # print('new tile to copy: ', tile.next, tile.previous)
 
     reset_assembly(starting_tile)
     if returned_pseudo_seed != None:
@@ -1671,8 +1670,8 @@ def run_simulation(seed_tile, stage):
     current_stage = 1
 
     while current_stage < stage:
-        print()
-        print("STARTING STAGE: ", current_stage)
+        # print()
+        # print("STARTING STAGE: ", current_stage)
 
         stack = deque()
         stack.append(seed_tile)
@@ -1681,7 +1680,7 @@ def run_simulation(seed_tile, stage):
             if cur_tile.next == None: continue
             for neighbor in cur_tile.next:
                 if neighbor != None:
-                    print("D: ", neighbor)
+                    # print("D: ", neighbor)
                     choose_copy_direction(cur_tile, neighbor)
                     new_pseudo_seed = copy_assembly(cur_tile, neighbor)
 
