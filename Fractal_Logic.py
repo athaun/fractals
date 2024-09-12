@@ -137,8 +137,8 @@ def plot_graph(seed_tile):
                 stack.append([cur_tile[0].tile_to_S, cur_tile[1], cur_tile[2]-1])
 
     print("Number of tiles: ", num_tiles)
-    plt.xticks(range(min(x)-1, max(x)+1))
-    plt.yticks(range(min(y)-1, max(y)+1))
+    # plt.xticks(range(min(x)-1, max(x)+1))
+    # plt.yticks(range(min(y)-1, max(y)+1))
     plt.plot(x, y, "x")
     plt.show()
     return 
