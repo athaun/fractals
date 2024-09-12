@@ -47,7 +47,7 @@ def create_seed(tile_positions, origin_tile_cords):
             stack.append([x, y+TILE_SIZE*2, 'N'])
             next.append('S')
 
-        del tile_positions[get_tag(x,y)]
+        if get_tag(x,y) in tile_positions: del tile_positions[get_tag(x,y)]
 
         if len(next) == 0: next = None
 
@@ -98,10 +98,11 @@ def create_seed(tile_positions, origin_tile_cords):
         x, y = int(x), int(y)
 
         if (x == min_x and get_tag(max_x, y) in new_tiles) or (x == max_x and get_tag(min_x, y) in new_tiles):
-            ktw, kte = new_tiles[get_tag(min_x, y)], new_tiles[get_tag(max_x, y)]
+            if [x,y] == origin_tile_cords: ktw, kte = new_tiles[get_tag(min_x, y)], new_tiles[get_tag(max_x, y)]
+            elif ktw == None and kte == None: ktw, kte = new_tiles[get_tag(min_x, y)], new_tiles[get_tag(max_x, y)]
         if (y == min_y and get_tag(x, max_y) in new_tiles) or (y == max_y and get_tag(x, min_y) in new_tiles):
-            ktn, kts = new_tiles[get_tag(x, min_y)], new_tiles[get_tag(x, max_y)]
-
+            if [x,y] == origin_tile_cords: ktn, kts = new_tiles[get_tag(x, min_y)], new_tiles[get_tag(x, max_y)]
+            elif ktn == None and kts == None: ktn, kts = new_tiles[get_tag(x, min_y)], new_tiles[get_tag(x, max_y)]
     ktn.key_tile_N = None
     kte.key_tile_E = None
     ktw.key_tile_W = None

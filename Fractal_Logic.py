@@ -117,7 +117,7 @@ def plot_graph(seed_tile):
         cur_tile = stack.pop()
 
         # Debug
-        # print("Printing:", cur_tile[0].next, cur_tile[0].previous, cur_tile[0].N, cur_tile[0].E, cur_tile[0].W, cur_tile[0].S)
+        print("Printing:", cur_tile[0].next, cur_tile[0].previous, cur_tile[0].N, cur_tile[0].E, cur_tile[0].W, cur_tile[0].S, cur_tile[0].key_tile_N, cur_tile[0].key_tile_E, cur_tile[0].key_tile_W, cur_tile[0].key_tile_S)
         x.append(cur_tile[1])
         y.append(cur_tile[2])
         num_tiles += 1
@@ -212,6 +212,7 @@ def reset_stage(tile):
         cur_tile.wall = False
         cur_tile.pseudo_seed = False
         cur_tile.caps = []
+        cur_tile.copied = False
 
         if cur_tile.tile_to_N != None: cur_tile.N = 'N'
         if cur_tile.tile_to_E != None: cur_tile.E = 'N'
@@ -221,25 +222,25 @@ def reset_stage(tile):
         # Fix any missing 'previous' and 'next'
         if not cur_tile.original_seed:
 
-            if cur_tile.tile_to_N != None and (cur_tile.next == None or 'N' not in cur_tile.next) and 'N' not in cur_tile.previous: 
+            if cur_tile.tile_to_N != None and (cur_tile.next == None or 'N' not in cur_tile.next) and (cur_tile.previous == None or cur_tile.previous[0] != 'N'): 
                 if cur_tile.next == None: cur_tile.next = ['N']
                 else: cur_tile.next.append('N')
                 
                 retrieve_tile(cur_tile, 'N').previous = ['S']
 
-            if cur_tile.tile_to_E != None and (cur_tile.next == None or 'E' not in cur_tile.next) and 'E' not in cur_tile.previous: 
+            if cur_tile.tile_to_E != None and (cur_tile.next == None or 'E' not in cur_tile.next) and (cur_tile.previous == None or cur_tile.previous[0] != 'E'): 
                 if cur_tile.next == None: cur_tile.next = ['E']
                 else: cur_tile.next.append('E')
                 
                 retrieve_tile(cur_tile, 'E').previous = ['W']
 
-            if cur_tile.tile_to_W != None and (cur_tile.next == None or 'W' not in cur_tile.next) and 'W' not in cur_tile.previous: 
+            if cur_tile.tile_to_W != None and (cur_tile.next == None or 'W' not in cur_tile.next) and (cur_tile.previous == None or cur_tile.previous[0] != 'W'): 
                 if cur_tile.next == None: cur_tile.next = ['W']
                 else: cur_tile.next.append('W')
                 
                 retrieve_tile(cur_tile, 'W').previous = ['E']
 
-            if cur_tile.tile_to_S != None and (cur_tile.next == None or 'S' not in cur_tile.next) and 'S' not in cur_tile.previous: 
+            if cur_tile.tile_to_S != None and (cur_tile.next == None or 'S' not in cur_tile.next) and (cur_tile.previous == None or cur_tile.previous[0] != 'S'): 
                 if cur_tile.next == None: cur_tile.next = ['S']
                 else: cur_tile.next.append('S')
                 
@@ -391,7 +392,7 @@ def move_caps(tile):
     return False
 
 # Copies a tile from current location to new subassembly
-def copy_tile(tile, d, ps, starting_tile):
+def copy_tile(tile, d, ps):
     pseudo_seed = None
     tile.status = "W"
 
@@ -425,6 +426,11 @@ def copy_tile(tile, d, ps, starting_tile):
         if tile.key_tile_E == None: tile.new_kt_E = True
         if tile.key_tile_W == None: tile.new_kt_W = True
         if tile.key_tile_S == None: tile.new_kt_S = True
+
+        tile.copied = True
+        tile_to_copy.copied = True
+
+    if tile.copied == True: tile_to_copy.copied = True
 
     tile.transfer = tile_to_copy
     
@@ -1539,6 +1545,7 @@ def direction_missing(tile):
 def copy_assembly(tile, d): 
     pseudo_seed = None
     returned_pseudo_seed = None
+    tile.copied = True
 
     if d == "N":
         pseudo_seed = tile.tile_to_N
@@ -1561,7 +1568,7 @@ def copy_assembly(tile, d):
     while not is_assembly_finished(starting_tile):
         # copy tile
         # print("------------------- copying tile: ", tile.next, tile.previous)
-        is_pseudo_seed = copy_tile(tile, d, pseudo_seed, starting_tile)
+        is_pseudo_seed = copy_tile(tile, d, pseudo_seed)
 
         if is_pseudo_seed != None: 
             returned_pseudo_seed = is_pseudo_seed
@@ -1668,7 +1675,7 @@ def copy_assembly(tile, d):
 # Run simulation -----------------------------------------------------------------------------------
 def run_simulation(seed_tile, stage):
     current_stage = 1
-
+    # dir = []
     while current_stage < stage:
         # print()
         # print("STARTING STAGE: ", current_stage)
@@ -1677,15 +1684,27 @@ def run_simulation(seed_tile, stage):
         stack.append(seed_tile)
         while len(stack) > 0:
             cur_tile = stack.pop()
-            if cur_tile.next == None: continue
-            for neighbor in cur_tile.next:
-                if neighbor != None:
-                    # print("D: ", neighbor)
-                    choose_copy_direction(cur_tile, neighbor)
-                    new_pseudo_seed = copy_assembly(cur_tile, neighbor)
+            if cur_tile.next != None: 
+                for neighbor in cur_tile.next:
+                    if retrieve_tile(cur_tile, neighbor).copied == False:
+                        # print("D: ", neighbor)
+                        # dir.append(neighbor)
+                        choose_copy_direction(cur_tile, neighbor)
+                        new_pseudo_seed = copy_assembly(cur_tile, neighbor)
 
-                    stack.append(new_pseudo_seed)
+                        if new_pseudo_seed != None: stack.append(new_pseudo_seed)
 
+            if cur_tile.previous != None: 
+                if retrieve_tile(cur_tile, cur_tile.previous[0]).copied == False:
+                    # print("D: ", cur_tile.previous[0])
+                    # dir.append(neighbor)
+                    choose_copy_direction(cur_tile, cur_tile.previous[0])
+                    new_pseudo_seed = copy_assembly(cur_tile, cur_tile.previous[0])
+
+                    if new_pseudo_seed != None: stack.append(new_pseudo_seed)
+
+        # print(len(dir))
+        # print(dir)
         # At end of stage
         reset_stage(seed_tile)
         reset_keytile_directions(seed_tile)
