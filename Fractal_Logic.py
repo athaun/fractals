@@ -117,7 +117,7 @@ def plot_graph(seed_tile):
         cur_tile = stack.pop()
 
         # Debug
-        print("Printing:", cur_tile[0].next, cur_tile[0].previous, cur_tile[0].N, cur_tile[0].E, cur_tile[0].W, cur_tile[0].S, cur_tile[0].key_tile_N, cur_tile[0].key_tile_E, cur_tile[0].key_tile_W, cur_tile[0].key_tile_S)
+        # print("Printing:", cur_tile[0].next, cur_tile[0].previous, cur_tile[0].N, cur_tile[0].E, cur_tile[0].W, cur_tile[0].S, cur_tile[0].key_tile_N, cur_tile[0].key_tile_E, cur_tile[0].key_tile_W, cur_tile[0].key_tile_S)
         x.append(cur_tile[1])
         y.append(cur_tile[2])
         num_tiles += 1
