@@ -335,6 +335,7 @@ class choose_origin(tk.Frame):
         button.pack()
 
 app = main()
+app.geometry('1000x625')
 app.mainloop()
 
 
