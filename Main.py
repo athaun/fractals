@@ -3,7 +3,7 @@ import tkinter as tk
 import math
 from collections import deque
 
-# Specify up to what stage (DO NOT RECOMMEND MORE THAN 4)
+# Specify up to what stage (DO NOT RECOMMEND MORE THAN 3)
 STAGE = 3
 
 # Tile size and locations
@@ -25,26 +25,34 @@ def create_seed(tile_positions, origin_tile_cords):
 
     min_x, max_x, min_y, max_y = math.inf, -1, math.inf, -1
 
+    visited = []
+
     while len(stack) > 0:
-        [x,y, prev] = stack.pop()
+        [x,y, prev] = stack.popleft()
         next = []
+
+        if [x,y] not in visited: visited.append([x,y])
 
         if x < min_x: min_x = x
         if x > max_x: max_x = x
         if y < min_y: min_y = y
         if y > max_y: max_y = y
 
-        if get_tag(x, y-TILE_SIZE*2) in tile_positions: 
+        if get_tag(x, y-TILE_SIZE*2) in tile_positions and get_tag(x, y-TILE_SIZE*2) not in visited: 
             stack.append([x, y-TILE_SIZE*2, 'S'])
+            visited.append(get_tag(x, y-TILE_SIZE*2))
             next.append('N')
-        if get_tag(x+TILE_SIZE*2, y) in tile_positions: 
+        if get_tag(x+TILE_SIZE*2, y) in tile_positions and get_tag(x+TILE_SIZE*2, y) not in visited: 
             stack.append([x+TILE_SIZE*2, y, 'W'])
+            visited.append(get_tag(x+TILE_SIZE*2, y))
             next.append('E')
-        if get_tag(x-TILE_SIZE*2, y) in tile_positions: 
+        if get_tag(x-TILE_SIZE*2, y) in tile_positions and get_tag(x-TILE_SIZE*2, y) not in visited: 
             stack.append([x-TILE_SIZE*2, y, 'E'])
+            visited.append(get_tag(x-TILE_SIZE*2, y))
             next.append('W')
-        if get_tag(x, y+TILE_SIZE*2) in tile_positions: 
+        if get_tag(x, y+TILE_SIZE*2) in tile_positions and get_tag(x, y+TILE_SIZE*2) not in visited: 
             stack.append([x, y+TILE_SIZE*2, 'N'])
+            visited.append(get_tag(x, y+TILE_SIZE*2))
             next.append('S')
 
         if get_tag(x,y) in tile_positions: del tile_positions[get_tag(x,y)]
