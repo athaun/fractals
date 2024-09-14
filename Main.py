@@ -1,5 +1,6 @@
 import Fractal_Logic as fl
 import tkinter as tk
+import tkinter.messagebox
 import math
 from collections import deque
 
@@ -10,6 +11,27 @@ STAGE = 3
 TILE_SIZE = 30
 
 # Useful functions
+def check_valid_seed(tile_positions):
+    valid, error = True, []
+    
+    # Check for at least 1 tile
+    if len(tile_positions) < 1:
+        valid = False
+        error = "Left click to place tiles"
+
+    # Check for connectivitiy
+    else:
+        for cord in tile_positions:
+            [x,y] = cord.split(',')
+            x, y = int(x), int(y)
+
+            if get_tag(x, y-TILE_SIZE*2) not in tile_positions and get_tag(x+TILE_SIZE*2, y) not in tile_positions and get_tag(x-TILE_SIZE*2, y) not in tile_positions and get_tag(x, y+TILE_SIZE*2) not in tile_positions: 
+                valid = False
+                error = "Fractal must be connected"
+                break
+
+    return [valid, error]
+
 def get_tag(x, y):
     return str(x) + ',' + str(y)
 
@@ -286,8 +308,13 @@ class draw_seed(tk.Frame):
         canvas.bind("<Button-3>", remove_tile)
 
         def display_choose_origin():
-            controller.update_frame(choose_origin)
-            controller.show_frame(choose_origin)
+            [valid, error] = check_valid_seed(controller.tile_positions)
+
+            if valid:
+                controller.update_frame(choose_origin)
+                controller.show_frame(choose_origin)
+            else: 
+                tk.messagebox.showinfo("Invalid seed", error)
 
         button = tk.Button(self, text="Done", command=display_choose_origin)
         button.pack()
@@ -339,10 +366,14 @@ class choose_origin(tk.Frame):
         
         canvas.bind("<Button-1>", choosing_tile)
 
+        def display_number_stages(): 
+            controller.finish()
+
         button = tk.Button(self, text="Done",
-                            command=lambda: controller.finish())
+                            command=display_number_stages)
         button.pack()
 
 app = main()
 app.geometry('1000x625')
+app.title('Fractals in Seeded TA')
 app.mainloop()
