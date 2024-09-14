@@ -1,5 +1,6 @@
 from collections import deque
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import time
 
 class Tile():
@@ -136,10 +137,14 @@ def plot_graph(seed_tile):
             if (neighbor == "S"):
                 stack.append([cur_tile[0].tile_to_S, cur_tile[1], cur_tile[2]-1])
 
+    if (max(x) - min(x)) > (max(y) - min(y)): l, r = min(x)-1, max(x) + 1
+    else: l, r = min(x)-1, max(x) + 1
+
     print("Number of tiles: ", num_tiles)
-    # plt.xticks(range(min(x)-1, max(x)+1))
-    # plt.yticks(range(min(y)-1, max(y)+1))
+    plt.xticks([])
+    plt.yticks([])
     plt.plot(x, y, "x")
+    plt.title('Result')
     plt.show()
     return 
 
