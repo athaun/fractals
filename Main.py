@@ -30,7 +30,38 @@ def check_valid_seed(tile_positions):
                 error = "Fractal must be connected"
                 break
 
-    return [valid, error]
+    if not valid: return [valid, error]
+
+    # Check if feasible generator
+    else: 
+        min_x, max_x, min_y, max_y = math.inf, -1, math.inf, -1
+        for cord in tile_positions:
+            [x,y] = cord.split(',')
+            x, y = int(x), int(y)
+
+            if x < min_x: min_x = x
+            if x > max_x: max_x = x
+            if y < min_y: min_y = y
+            if y > max_y: max_y = y
+
+        n, e, w, s = False, False, False, False
+        for cord in tile_positions:
+            [x,y] = cord.split(',')
+            x, y = int(x), int(y)
+
+            if (x == min_x and get_tag(max_x, y) in tile_positions) or (x == max_x and get_tag(min_x, y) in tile_positions):
+                e, w = True, True
+            if (y == min_y and get_tag(x, max_y) in tile_positions) or (y == max_y and get_tag(x, min_y) in tile_positions):
+                n, s = True, True
+
+        if not (n and s): 
+            return [False, "Not feasible generator (north/south)"]
+        if not (e and w): 
+            return [False, "Not feasible generator (east/west)"]
+        
+        return [True, error]
+
+
 
 def get_tag(x, y):
     return str(x) + ',' + str(y)
@@ -49,16 +80,22 @@ def create_seed(tile_positions, origin_tile_cords):
 
     visited = []
 
-    while len(stack) > 0:
-        [x,y, prev] = stack.popleft()
-        next = []
-
-        if [x,y] not in visited: visited.append([x,y])
+    # Find the min/max values
+    min_x, max_x, min_y, max_y = math.inf, -1, math.inf, -1
+    for cord in tile_positions:
+        [x,y] = cord.split(',')
+        x, y = int(x), int(y)
 
         if x < min_x: min_x = x
         if x > max_x: max_x = x
         if y < min_y: min_y = y
         if y > max_y: max_y = y
+
+    while len(stack) > 0:
+        [x,y, prev] = stack.popleft()
+        next = []
+
+        if [x,y] not in visited: visited.append([x,y])
 
         if get_tag(x, y-TILE_SIZE*2) in tile_positions and get_tag(x, y-TILE_SIZE*2) not in visited: 
             stack.append([x, y-TILE_SIZE*2, 'S'])
