@@ -226,11 +226,7 @@ def create_seed(tile_positions, origin_tile_cords):
                     adj_tile.key_tile_S = [fl.opp(n)]
                     stack.append(adj_tile)
 
-    # Run simulation
-    result = fl.run_simulation(seed_tile, STAGE)
-
-    # Plot the result onto graph
-    fl.plot_graph(seed_tile)
+    return seed_tile
 
 # Main
 class main(tk.Tk):
@@ -248,8 +244,9 @@ class main(tk.Tk):
         self.frames = {}
         self.tile_positions=dict([])
         self.origin_tile = None
+        self.stages = 1
 
-        for F in (draw_seed, choose_origin):
+        for F in (draw_seed, choose_origin, select_stages):
             frame = F(container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
@@ -267,7 +264,13 @@ class main(tk.Tk):
 
     def finish(self):
         if self.origin_tile != None:
-            create_seed(self.tile_positions, self.origin_tile)
+            seed_tile = create_seed(self.tile_positions, self.origin_tile)
+
+            # Run simulation
+            fl.run_simulation(seed_tile, self.stages)
+
+            # Plot the result onto graph
+            fl.plot_graph(seed_tile)
             self.destroy()
 
 class draw_seed(tk.Frame):
@@ -367,10 +370,48 @@ class choose_origin(tk.Frame):
         canvas.bind("<Button-1>", choosing_tile)
 
         def display_number_stages(): 
-            controller.finish()
+            if controller.origin_tile != None:
+                controller.update_frame(select_stages)
+                controller.show_frame(select_stages)
 
         button = tk.Button(self, text="Done",
                             command=display_number_stages)
+        button.pack()
+
+class select_stages(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self,parent)
+
+        label = tk.Label(self, text = "Select the number of stages to complete.")
+        label.pack()
+
+    def update(self, controller):
+        # Add the options
+        options = []
+        num_tiles = len(controller.tile_positions)
+        stage = 1
+        actual_stage = 1
+
+        while num_tiles < 30000:
+            v = str(stage) + " - (stage: %s)" % actual_stage
+            options.append(v)
+            num_tiles *= num_tiles
+            stage += 1
+            actual_stage *= 2
+
+        # Stores value selected
+        var = tk.StringVar(controller)
+        var.set(options[0])
+
+        drop_down = tk.OptionMenu(self, var, *options)
+        drop_down.pack()
+
+        def finish():
+            s = var.get().split(' ')
+            controller.stages = int(s[0])
+            controller.finish()
+
+        button = tk.Button(controller, text="Done", command=finish)
         button.pack()
 
 app = main()
