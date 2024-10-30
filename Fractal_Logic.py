@@ -154,9 +154,19 @@ def choose_copy_direction(tile, direction):
     stack.append(tile)
     visited_tiles = []
 
+    t = []
+
     while len(stack) > 0:
         cur_tile = stack.pop()
-        cur_tile.copy_direction = direction
+
+        c = 0
+        if cur_tile.next != None: c += len(cur_tile.next)
+        if cur_tile.previous != None: c += len(cur_tile.previous)
+        if not cur_tile.original_seed or not cur_tile.pseudo_seed: c -= 1 
+
+        if not cur_tile.terminal and not (cur_tile.original_seed or cur_tile.pseudo_seed): cur_tile.copy_direction = direction + str(c)
+        else: cur_tile.copy_direction = direction
+
         cur_tile.status = 'P'
 
         if cur_tile.next != None:
@@ -167,7 +177,46 @@ def choose_copy_direction(tile, direction):
             for neighbor in cur_tile.previous:
                 if retrieve_tile(cur_tile, neighbor) not in visited_tiles: stack.append(retrieve_tile(cur_tile, neighbor))
 
+        if cur_tile.terminal: t.append(cur_tile)
+
         visited_tiles.append(cur_tile)
+
+    # All tiles are marked with copying direction, retrace back to original/pseudo seed
+    while len(t) > 0:
+        cur_tile = t.pop()
+
+        if cur_tile.next != None: 
+            for neighbor in cur_tile.next:
+                if len(retrieve_tile(cur_tile, neighbor).copy_direction) > 1:
+                    adj_tile = retrieve_tile(cur_tile, neighbor)
+
+                    l = list(adj_tile.copy_direction)
+
+                    l[1] = int(l[1]) - 1
+
+                    if l[1] == 0: 
+                        adj_tile.copy_direction = l[0]
+                        t.append(adj_tile)
+                    else: 
+                        adj_tile.copy_direction = "".join(l)
+                        break
+
+        if cur_tile.previous != None: 
+            for neighbor in cur_tile.previous:
+                if len(retrieve_tile(cur_tile, neighbor).copy_direction) > 1:
+                    adj_tile = retrieve_tile(cur_tile, neighbor)
+
+                    l = list(adj_tile.copy_direction)
+
+                    l[1] = int(l[1]) - 1
+
+                    if l[1] == 0: 
+                        adj_tile.copy_direction = l[0]
+                        t.append(adj_tile)
+                    else: 
+                        l[1] = str(l[1])
+                        adj_tile.copy_direction = "".join(l)
+                        break
 
     return
 
