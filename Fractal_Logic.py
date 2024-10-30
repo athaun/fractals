@@ -729,6 +729,50 @@ def copy_tile(tile, d, ps):
                 prev_tile.caps.append(opp(breadcrumb_direction))
                 tile.caps = []
 
+            if d in tile.caps and tile.key_tile_S == None and retrieve_tile(tile, breadcrumb_direction).copy_direction == d:
+                # Find pseudo seed
+                tile.copy_direction = '?'
+                t = [tile]
+
+                while len(t) > 0:
+                    ct = t.pop()
+
+                    if ct.copy_direction == '?':
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                    else: 
+                        l = list(ct.copy_direction)
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                    if ct.pseudo_seed: ct.copy_direction = 'Y'
+                    else: ct.copy_direction = None
+
             breadcrumb_direction = breadcrumb_trail(prev_tile)
 
             if breadcrumb_direction == 'N':
@@ -1000,6 +1044,50 @@ def copy_tile(tile, d, ps):
                 prev_tile.caps.append(opp(breadcrumb_direction))
                 tile.caps = []
 
+            if d in tile.caps and tile.key_tile_W == None and retrieve_tile(tile, breadcrumb_direction).copy_direction == d:
+                # Find pseudo seed
+                tile.copy_direction = '?'
+                t = [tile]
+
+                while len(t) > 0:
+                    ct = t.pop()
+
+                    if ct.copy_direction == '?':
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                    else: 
+                        l = list(ct.copy_direction)
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                    if ct.pseudo_seed: ct.copy_direction = 'Y'
+                    else: ct.copy_direction = None
+
             breadcrumb_direction = breadcrumb_trail(prev_tile)
 
             if breadcrumb_direction == 'N':
@@ -1270,6 +1358,50 @@ def copy_tile(tile, d, ps):
                 prev_tile.caps.append(opp(breadcrumb_direction))
                 tile.caps = []
 
+            if d in tile.caps and tile.key_tile_E == None and retrieve_tile(tile, breadcrumb_direction).copy_direction == d:
+                # Find pseudo seed
+                tile.copy_direction = '?'
+                t = [tile]
+
+                while len(t) > 0:
+                    ct = t.pop()
+
+                    if ct.copy_direction == '?':
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                    else: 
+                        l = list(ct.copy_direction)
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                    if ct.pseudo_seed: ct.copy_direction = 'Y'
+                    else: ct.copy_direction = None
+
             breadcrumb_direction = breadcrumb_trail(prev_tile)
 
             if breadcrumb_direction == 'N':
@@ -1536,6 +1668,50 @@ def copy_tile(tile, d, ps):
             if move_caps(tile):
                 prev_tile.caps.append(opp(breadcrumb_direction))
                 tile.caps = []
+
+            if d in tile.caps and tile.key_tile_N == None and retrieve_tile(tile, breadcrumb_direction).copy_direction == d:
+                # Find pseudo seed
+                tile.copy_direction = '?'
+                t = [tile]
+
+                while len(t) > 0:
+                    ct = t.pop()
+
+                    if ct.copy_direction == '?':
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                adj_tile = retrieve_tile(ct, neighbor)
+                                if adj_tile != None:
+                                    adj_tile.copy_direction = '?' + opp(neighbor)
+                                    t.append(adj_tile)
+
+                    else: 
+                        l = list(ct.copy_direction)
+                        if ct.next != None: 
+                            for neighbor in ct.next:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                        if ct.previous != None: 
+                            for neighbor in ct.previous:
+                                if neighbor != l[1]: 
+                                    adj_tile = retrieve_tile(ct, neighbor)
+                                    if adj_tile != None:
+                                        adj_tile.copy_direction = '?' + opp(neighbor)
+                                        t.append(adj_tile)
+
+                    if ct.pseudo_seed: ct.copy_direction = 'Y'
+                    else: ct.copy_direction = None
 
             breadcrumb_direction = breadcrumb_trail(prev_tile)
 
