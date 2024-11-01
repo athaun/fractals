@@ -59,6 +59,9 @@ class Tile():
     # Is tile terminal
     terminal = False
 
+    # For seeds, number of times subassembly has been copied
+    num_times_copied = 0
+
 # RETURNS: opp(d) i.e if N -> S
 def opp(d):
     if d == "N": 
@@ -168,6 +171,16 @@ def choose_copy_direction(tile, direction):
         else: cur_tile.copy_direction = direction
 
         cur_tile.status = 'P'
+        cur_tile.caps = []
+
+        if cur_tile.N != None and cur_tile.key_tile_N != None: cur_tile.N = 'N'
+        else: cur_tile.N = None
+        if cur_tile.E != None and cur_tile.key_tile_E != None: cur_tile.E = 'N'
+        else: cur_tile.E = None
+        if cur_tile.W != None and cur_tile.key_tile_W != None: cur_tile.W = 'N'
+        else: cur_tile.W = None
+        if cur_tile.S != None and cur_tile.key_tile_S != None: cur_tile.S = 'N'
+        else: cur_tile.S = None
 
         if cur_tile.next != None:
             for neighbor in cur_tile.next:
@@ -1895,9 +1908,56 @@ def copy_assembly(tile, d):
 
         # print('new tile to copy: ', tile.next, tile.previous)
 
-    reset_assembly(starting_tile)
-    if returned_pseudo_seed != None:
-        reset_assembly(returned_pseudo_seed)
+
+    # Need to find pseudo seed to copy in new direction: 
+    if tile == starting_tile:
+        tile.copy_direction = '?'
+        t = [tile]
+
+        while len(t) > 0:
+            ct = t.pop()
+
+            if ct.copy_direction == '?':
+                if ct.next != None: 
+                    for neighbor in ct.next:
+                        adj_tile = retrieve_tile(ct, neighbor)
+                        if adj_tile != None:
+                            adj_tile.copy_direction = '?' + opp(neighbor)
+                            t.append(adj_tile)
+
+                if ct.previous != None: 
+                    for neighbor in ct.previous:
+                        adj_tile = retrieve_tile(ct, neighbor)
+                        if adj_tile != None:
+                            adj_tile.copy_direction = '?' + opp(neighbor)
+                            t.append(adj_tile)
+
+            else: 
+                l = list(ct.copy_direction)
+                if ct.next != None: 
+                    for neighbor in ct.next:
+                        if neighbor != l[1]: 
+                            adj_tile = retrieve_tile(ct, neighbor)
+                            if adj_tile != None:
+                                adj_tile.copy_direction = '?' + opp(neighbor)
+                                t.append(adj_tile)
+
+                if ct.previous != None: 
+                    for neighbor in ct.previous:
+                        if neighbor != l[1]: 
+                            adj_tile = retrieve_tile(ct, neighbor)
+                            if adj_tile != None:
+                                adj_tile.copy_direction = '?' + opp(neighbor)
+                                t.append(adj_tile)
+
+            if ct.pseudo_seed: 
+                ct.copy_direction = 'Y'
+                ct.num_times_copied += 1
+            else: ct.copy_direction = None
+
+    # reset_assembly(starting_tile)
+    # if returned_pseudo_seed != None:
+    #     reset_assembly(returned_pseudo_seed)
 
     return returned_pseudo_seed
 
