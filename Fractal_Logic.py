@@ -118,7 +118,7 @@ def plot_graph(seed_tile):
     stack.append([seed_tile, 0, 0])
     num_tiles = 0
 
-    # print("PRINTING -----------------------")
+    print("PRINTING -----------------------")
 
     while len(stack) > 0:
         cur_tile = stack.pop()
@@ -146,7 +146,7 @@ def plot_graph(seed_tile):
     if (max(x) - min(x)) > (max(y) - min(y)): l, r = min(x)-1, max(x) + 1
     else: l, r = min(x)-1, max(x) + 1
 
-    # print("Number of tiles: ", num_tiles)
+    print("Number of tiles: ", num_tiles)
     plt.xticks([])
     plt.yticks([])
     plt.plot(x, y, "x")
