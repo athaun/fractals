@@ -1,4 +1,5 @@
 import Fractal_Logic as fl
+import Generate_XML as g
 import tkinter as tk
 import tkinter.messagebox
 import math
@@ -304,7 +305,10 @@ class main(tk.Tk):
             seed_tile = create_seed(self.tile_positions, self.origin_tile)
 
             # Run simulation
-            fl.run_simulation(seed_tile, self.stages)
+            [seed_tile, states, transitions, affinities, original_seed_tile] = fl.run_simulation(seed_tile, self.stages)
+
+            # Output XML file
+            # g.generate_xml_file(states, transitions, affinities, original_seed_tile)
 
             # Plot the result onto graph
             fl.plot_graph(seed_tile)

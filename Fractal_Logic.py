@@ -2,6 +2,15 @@ from collections import deque
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import time
+import copy
+
+import Generate_XML as g
+import Functions as fl
+
+# Storing all transitions and affinity rules
+states = []
+transitions = []
+affinities = []
 
 # To store the tiles where hard resetting will first occur
 hard_reset_tiles = []
@@ -65,6 +74,10 @@ class Tile():
     # For seeds, number of times subassembly has been copied
     num_times_copied = 0
 
+    # The new previous and next for tile
+    new_p = None
+    new_n = None
+
 # RETURNS: opp(d) i.e if N -> S
 def opp(d):
     if d == "N": 
@@ -125,6 +138,7 @@ def plot_graph(seed_tile):
 
         # Debug
         # print("Printing:", cur_tile[0].next, cur_tile[0].previous, cur_tile[0].N, cur_tile[0].E, cur_tile[0].W, cur_tile[0].S, "Keytiles:", cur_tile[0].key_tile_N, cur_tile[0].key_tile_E, cur_tile[0].key_tile_W, cur_tile[0].key_tile_S, cur_tile[0].copy_direction)
+        # time.sleep(1)
         x.append(cur_tile[1])
         y.append(cur_tile[2])
 
@@ -154,6 +168,27 @@ def plot_graph(seed_tile):
     plt.show()
     return 
 
+def copy_direction_update_tiles(cur_tile, direction):
+    c = 0
+    if cur_tile.next != None: c += len(cur_tile.next)
+    if cur_tile.previous != None: c += len(cur_tile.previous)
+    if not cur_tile.original_seed or not cur_tile.pseudo_seed: c -= 1 
+
+    if not cur_tile.terminal and not (cur_tile.original_seed or cur_tile.pseudo_seed): cur_tile.copy_direction = direction + str(c)
+    else: cur_tile.copy_direction = direction
+
+    cur_tile.status = 'P'
+    cur_tile.caps = []
+
+    if cur_tile.N != None and cur_tile.key_tile_N != None: cur_tile.N = 'N'
+    else: cur_tile.N = None
+    if cur_tile.E != None and cur_tile.key_tile_E != None: cur_tile.E = 'N'
+    else: cur_tile.E = None
+    if cur_tile.W != None and cur_tile.key_tile_W != None: cur_tile.W = 'N'
+    else: cur_tile.W = None
+    if cur_tile.S != None and cur_tile.key_tile_S != None: cur_tile.S = 'N'
+    else: cur_tile.S = None
+
 # Proprogate copy direction through subassembly
 def choose_copy_direction(tile, direction):
     stack = deque()
@@ -165,33 +200,55 @@ def choose_copy_direction(tile, direction):
     while len(stack) > 0:
         cur_tile = stack.pop()
 
-        c = 0
-        if cur_tile.next != None: c += len(cur_tile.next)
-        if cur_tile.previous != None: c += len(cur_tile.previous)
-        if not cur_tile.original_seed or not cur_tile.pseudo_seed: c -= 1 
+        if cur_tile.new_n == None and cur_tile.new_p == None: 
+            cur_tile.new_n = copy.deepcopy(cur_tile.next)
+            cur_tile.new_p = copy.deepcopy(cur_tile.previous)
 
-        if not cur_tile.terminal and not (cur_tile.original_seed or cur_tile.pseudo_seed): cur_tile.copy_direction = direction + str(c)
-        else: cur_tile.copy_direction = direction
-
-        cur_tile.status = 'P'
-        cur_tile.caps = []
-
-        if cur_tile.N != None and cur_tile.key_tile_N != None: cur_tile.N = 'N'
-        else: cur_tile.N = None
-        if cur_tile.E != None and cur_tile.key_tile_E != None: cur_tile.E = 'N'
-        else: cur_tile.E = None
-        if cur_tile.W != None and cur_tile.key_tile_W != None: cur_tile.W = 'N'
-        else: cur_tile.W = None
-        if cur_tile.S != None and cur_tile.key_tile_S != None: cur_tile.S = 'N'
-        else: cur_tile.S = None
+        # Generate transition rule -----
+        t1 = fl.generate_state(cur_tile)
+        # ------------------------------
 
         if cur_tile.next != None:
             for neighbor in cur_tile.next:
-                if retrieve_tile(cur_tile, neighbor) not in visited_tiles: stack.append(retrieve_tile(cur_tile, neighbor))
+                if retrieve_tile(cur_tile, neighbor) not in visited_tiles and retrieve_tile(cur_tile, neighbor) != None: 
+                    adj_tile = retrieve_tile(cur_tile, neighbor)
+                    stack.append(adj_tile)
+
+                    # Generate transition rule --------------------
+                    t2 = fl.generate_state(adj_tile)
+
+                    copy_direction_update_tiles(cur_tile, direction)
+                    copy_direction_update_tiles(adj_tile, direction)
+
+                    t1_final, t2_final = fl.generate_state(cur_tile), fl.generate_state(adj_tile)
+
+                    if neighbor == 'N': transitions.append([t2, t1, t2_final, t1_final, 'V'])
+                    elif neighbor == 'E': transitions.append([t1, t2, t1_final, t2_final, 'H'])
+                    elif neighbor == 'W': transitions.append([t2, t1, t2_final, t1_final, 'H'])
+                    elif neighbor == 'S': transitions.append([t1, t2, t1_final, t2_final, 'V'])
+                    t1 = t1_final
+                    # ----------------------------------------------
 
         if cur_tile.previous != None:
             for neighbor in cur_tile.previous:
-                if retrieve_tile(cur_tile, neighbor) not in visited_tiles: stack.append(retrieve_tile(cur_tile, neighbor))
+                if retrieve_tile(cur_tile, neighbor) not in visited_tiles and retrieve_tile(cur_tile, neighbor) != None: 
+                    adj_tile = retrieve_tile(cur_tile, neighbor)
+                    stack.append(adj_tile)
+
+                    # Generate transition rule ---------------------
+                    t2 = fl.generate_state(adj_tile)
+
+                    copy_direction_update_tiles(cur_tile, direction)
+                    copy_direction_update_tiles(adj_tile, direction)
+
+                    t1_final, t2_final = fl.generate_state(cur_tile), fl.generate_state(adj_tile)
+
+                    if neighbor == 'N': transitions.append([t2, t1, t2_final, t1_final, 'V'])
+                    elif neighbor == 'E': transitions.append([t1, t2, t1_final, t2_final, 'H'])
+                    elif neighbor == 'W': transitions.append([t2, t1, t2_final, t1_final, 'H'])
+                    elif neighbor == 'S': transitions.append([t1, t2, t1_final, t2_final, 'V'])
+                    t1 = t1_final
+                    # ----------------------------------------------
 
         if cur_tile.terminal: t.append(cur_tile)
 
@@ -201,10 +258,18 @@ def choose_copy_direction(tile, direction):
     while len(t) > 0:
         cur_tile = t.pop()
 
+        # Generate transition rule ----
+        t1 = fl.generate_state(cur_tile)
+        # -----------------------------
+
         if cur_tile.next != None: 
             for neighbor in cur_tile.next:
                 if len(retrieve_tile(cur_tile, neighbor).copy_direction) > 1:
                     adj_tile = retrieve_tile(cur_tile, neighbor)
+
+                    # Generate transitions:
+                    t2 = fl.generate_state(adj_tile)
+                    # ---------------------
 
                     l = list(adj_tile.copy_direction)
 
@@ -213,9 +278,27 @@ def choose_copy_direction(tile, direction):
                     if l[1] == 0: 
                         adj_tile.copy_direction = l[0]
                         t.append(adj_tile)
+
+                        # Generate transitions -------------------
+                        t2_final = fl.generate_state(adj_tile)
+
+                        if neighbor == 'N': transitions.append([t2, t1, t2_final, t1, 'V'])
+                        elif neighbor == 'E': transitions.append([t1, t2, t1, t2_final, 'H'])
+                        elif neighbor == 'W': transitions.append([t2, t1, t2_final, t1, 'H'])
+                        elif neighbor == 'S': transitions.append([t1, t2, t1, t2_final, 'V'])
+                        # ----------------------------------------
                     else: 
                         l[1] = str(l[1])
                         adj_tile.copy_direction = "".join(l)
+
+                        # Generate transitions ------------------
+                        t2_final = fl.generate_state(adj_tile)
+
+                        if neighbor == 'N': transitions.append([t2, t1, t2_final, t1, 'V'])
+                        elif neighbor == 'E': transitions.append([t1, t2, t1, t2_final, 'H'])
+                        elif neighbor == 'W': transitions.append([t2, t1, t2_final, t1, 'H'])
+                        elif neighbor == 'S': transitions.append([t1, t2, t1, t2_final, 'V'])
+                        # ----------------------------------------
                         break
 
         if cur_tile.previous != None: 
@@ -223,6 +306,10 @@ def choose_copy_direction(tile, direction):
                 if len(retrieve_tile(cur_tile, neighbor).copy_direction) > 1:
                     adj_tile = retrieve_tile(cur_tile, neighbor)
 
+                    # Generate transitions
+                    t2 = fl.generate_state(adj_tile)
+                    # --------------------
+
                     l = list(adj_tile.copy_direction)
 
                     l[1] = int(l[1]) - 1
@@ -230,9 +317,26 @@ def choose_copy_direction(tile, direction):
                     if l[1] == 0: 
                         adj_tile.copy_direction = l[0]
                         t.append(adj_tile)
+
+                        # Generate transitions ---------------------------------------------------
+                        t2_final = fl.generate_state(adj_tile)
+
+                        if neighbor == 'N': transitions.append([t2, t1, t2_final, t1, 'V'])
+                        elif neighbor == 'E': transitions.append([t1, t2, t1, t2_final, 'H'])
+                        elif neighbor == 'W': transitions.append([t2, t1, t2_final, t1, 'H'])
+                        elif neighbor == 'S': transitions.append([t1, t2, t1, t2_final, 'V'])
+                        # -------------------------------------------------------------------------
                     else: 
                         l[1] = str(l[1])
                         adj_tile.copy_direction = "".join(l)
+
+                        # Generate transitions ----------------------------------------------------
+                        t2_final = fl.generate_state(adj_tile)
+                        if neighbor == 'N': transitions.append([t2, t1, t2_final, t1, 'V'])
+                        elif neighbor == 'E': transitions.append([t1, t2, t1, t2_final, 'H'])
+                        elif neighbor == 'W': transitions.append([t2, t1, t2_final, t1, 'H'])
+                        elif neighbor == 'S': transitions.append([t1, t2, t1, t2_final, 'V'])
+                        # -------------------------------------------------------------------------
                         break
 
     return
@@ -450,66 +554,14 @@ def choose_copy_direction(tile, direction):
 
 # Updates prev/next if tile is missing
 def update_prev_next(ct):
+
     if ct.tile_to_N != None: ct.N = 'N'
     if ct.tile_to_E != None: ct.E = 'N'
     if ct.tile_to_W != None: ct.W = 'N'
     if ct.tile_to_S != None: ct.S = 'N'
 
-    # Fix any missing 'previous' and 'next'
-    if not ct.original_seed:
-        if ct.previous == None: 
-            if ct.tile_to_N != None and 'N' not in ct.next: 
-                ct.previous = ['N']
-                adj = retrieve_tile(ct, 'N')
-                if adj.next == None: adj.next = ['S']
-                else: adj.next.append('S')
-
-            if ct.tile_to_E != None and 'E' not in ct.next:  
-                ct.previous = ['E']
-                adj = retrieve_tile(ct, 'E')
-                if adj.next == None: adj.next = ['W']
-                else: adj.next.append('W')
-
-            if ct.tile_to_W != None and 'W' not in ct.next:  
-                ct.previous = ['W']
-                adj = retrieve_tile(ct, 'W')
-                if adj.next == None: adj.next = ['E']
-                else: adj.next.append('E')
-
-            if ct.tile_to_S != None and 'S' not in ct.next:  
-                ct.previous = ['S']
-                adj = retrieve_tile(ct, 'S')
-                if adj.next == None: adj.next = ['N']
-                else: adj.next.append('N')
-
-        else: 
-            if ct.tile_to_N != None and 'N' not in ct.previous: 
-                if ct.next == None: ct.next = ['N']
-                elif 'N' not in ct.next: ct.next.append('N')
-                
-                adj = retrieve_tile(ct, 'N')
-                if adj.previous == None: adj.previous = ['S']
-
-            if ct.tile_to_E != None and 'E' not in ct.previous:  
-                if ct.next == None: ct.next = ['E']
-                elif 'E' not in ct.next: ct.next.append('E')
-                
-                adj = retrieve_tile(ct, 'E')
-                if adj.previous == None: adj.previous = ['W']
-
-            if ct.tile_to_W != None and 'W' not in ct.previous:  
-                if ct.next == None: ct.next = ['W']
-                elif 'W' not in ct.next: ct.next.append('W')
-                
-                adj = retrieve_tile(ct, 'W')
-                if adj.previous == None: adj.previous = ['E']
-
-            if ct.tile_to_S != None and 'S' not in ct.previous:  
-                if ct.next == None: ct.next = ['S']
-                elif 'S' not in ct.next: ct.next.append('S')
-                
-                adj = retrieve_tile(ct, 'S')
-                if adj.previous == None: adj.previous = ['N']
+    ct.next = copy.deepcopy(ct.new_n)
+    ct.previous = copy.deepcopy(ct.new_p)
 
 # Reset specific tile
 def reset_tile(ct):
@@ -525,6 +577,9 @@ def reset_tile(ct):
     ct.temp = None
     ct.transfer = None
 
+    ct.new_n = None
+    ct.new_p = None
+
     if num_next(ct)+1 == 1: ct.terminal = True
     else: ct.terminal = False
 
@@ -532,152 +587,94 @@ def reset_tile(ct):
 def hard_reset():
 
     while len(hard_reset_tiles) > 0:
+
         ct = hard_reset_tiles.pop()
         # print()
         # print("Tile from stack: ", ct.next, ct.previous, ct.key_tile_N, ct.key_tile_E, ct.key_tile_W, ct.key_tile_S, ct.copy_direction)
-        # update_prev_next(ct)
+        update_prev_next(ct)
+
         # print("Updated: ", ct.next, ct.previous, ct.key_tile_N, ct.key_tile_E, ct.key_tile_W, ct.key_tile_S, ct.copy_direction)
         # print()
 
-        if ct.previous != None: 
+        # if ct.previous != None: 
 
-            # Retrieve adjacent tile
-            adj_tile = retrieve_tile(ct, ct.previous[0])
+        # Retrieve adjacent tile
+        adj_tile = retrieve_tile(ct, ct.previous[0])
+        update_prev_next(adj_tile)
+
+        # print("Current BEFORE: ", ct.next, ct.previous, ct.key_tile_N, ct.key_tile_E, ct.key_tile_W, ct.key_tile_S, ct.copy_direction)
+        # print("--- Adj BEFORE:", adj_tile.next, adj_tile.previous, adj_tile.key_tile_N, adj_tile.key_tile_E, adj_tile.key_tile_W, adj_tile.key_tile_S, adj_tile.copy_direction)
+
+        # Start by first spreading hard reset if not yet done
+        if adj_tile.copy_direction == 'r': 
+            # print("RESET: ", adj_tile.next, adj_tile.previous)
+            adj_tile.copy_direction = 'R?'
+            t = [adj_tile]
             update_prev_next(adj_tile)
 
-            # print("Current BEFORE: ", ct.next, ct.previous, ct.key_tile_N, ct.key_tile_E, ct.key_tile_W, ct.key_tile_S, ct.copy_direction)
-            # print("--- Adj BEFORE:", adj_tile.next, adj_tile.previous, adj_tile.key_tile_N, adj_tile.key_tile_E, adj_tile.key_tile_W, adj_tile.key_tile_S, adj_tile.copy_direction)
+            while len(t) > 0:
+                cur = t.pop()
+                # print("-------- resetting tile:", cur.next, cur.previous)
 
-            # Start by first spreading hard reset if not yet done
-            if adj_tile.copy_direction == 'r': 
-                # print("RESET: ", adj_tile.next, adj_tile.previous)
-                adj_tile.copy_direction = 'R?'
-                t = [adj_tile]
-                update_prev_next(adj_tile)
+                if cur.next != None: 
+                    for neighbor in cur.next:
+                        a = retrieve_tile(cur, neighbor)
+                        update_prev_next(a)
+                        if a != None and (a.copy_direction == 'r'):
+                            if a.next == None: 
+                                a.copy_direction = 'R'
+                                hard_reset_tiles.append(a)
+                            else: a.copy_direction = 'R?'
+                            t.append(a)
 
-                while len(t) > 0:
-                    cur = t.pop()
-                    # print("-------- resetting tile:", cur.next, cur.previous)
-
-                    if cur.next != None: 
-                        for neighbor in cur.next:
-                            a = retrieve_tile(cur, neighbor)
-                            update_prev_next(a)
-                            if a != None and (a.copy_direction == 'r'):
-                                if a.next == None: 
-                                    a.copy_direction = 'R'
-                                    hard_reset_tiles.append(a)
-                                else: a.copy_direction = 'R?'
-                                t.append(a)
-
-                    if cur.previous != None: 
-                        for neighbor in cur.previous:
-                            a = retrieve_tile(cur, neighbor)
-                            update_prev_next(a)
-                            if a != None and (a.copy_direction == 'r'):
-                                if a.next == None: 
-                                    a.copy_direction = 'R'
-                                    hard_reset_tiles.append(a)
-                                else: a.copy_direction = 'R?'
-                                t.append(a)
-                    
-                    cur.key_tile_N = '*'
-                    cur.key_tile_E = '*'
-                    cur.key_tile_W = '*'
-                    cur.key_tile_S = '*'
-                    if num_next(cur) == 0: cur.copy_direction = 'R'
-                    else: cur.copy_direction = 'R' + str(num_next(cur))
-
-            # Resetting tile
-            reset_tile(ct)
-
-            # Not at seed yet
-            if not adj_tile.original_seed: 
+                if cur.previous != None: 
+                    for neighbor in cur.previous:
+                        a = retrieve_tile(cur, neighbor)
+                        update_prev_next(a)
+                        if a != None and (a.copy_direction == 'r'):
+                            if a.next == None: 
+                                a.copy_direction = 'R'
+                                hard_reset_tiles.append(a)
+                            else: a.copy_direction = 'R?'
+                            t.append(a)
                 
-                # Update direction to key tiles for cur tile and neighbor
-                #   When cur_tile is terminal
-                if ct.terminal:
-                    if ct.new_kt_N: 
-                        ct.key_tile_N = None
-                        adj_tile.key_tile_N = opp(ct.previous[0])
-                    else: ct.key_tile_N = ct.previous[0]
+                cur.key_tile_N = '*'
+                cur.key_tile_E = '*'
+                cur.key_tile_W = '*'
+                cur.key_tile_S = '*'
+                if num_next(cur) == 0: cur.copy_direction = 'R'
+                else: cur.copy_direction = 'R' + str(num_next(cur))
 
-                    if ct.new_kt_E: 
-                        ct.key_tile_E = None
-                        adj_tile.key_tile_E = opp(ct.previous[0])
-                    else: ct.key_tile_E = ct.previous[0]
+        # Resetting tile
+        reset_tile(ct)
 
-                    if ct.new_kt_W: 
-                        ct.key_tile_W = None
-                        adj_tile.key_tile_W = opp(ct.previous[0])
-                    else: ct.key_tile_W = ct.previous[0]
+        # Not at seed yet
+        if not adj_tile.original_seed: 
+            
+            # Update direction to key tiles for cur tile and neighbor
+            #   When cur_tile is terminal
+            if ct.terminal:
+                if ct.new_kt_N: 
+                    ct.key_tile_N = None
+                    adj_tile.key_tile_N = opp(ct.previous[0])
+                else: ct.key_tile_N = ct.previous[0]
 
-                    if ct.new_kt_S: 
-                        ct.key_tile_S = None
-                        adj_tile.key_tile_S = opp(ct.previous[0])
-                    else: ct.key_tile_S = ct.previous[0]
+                if ct.new_kt_E: 
+                    ct.key_tile_E = None
+                    adj_tile.key_tile_E = opp(ct.previous[0])
+                else: ct.key_tile_E = ct.previous[0]
 
-                #   Cur_tile is not terminal
-                else:
-                    if ct.new_kt_N: 
-                        ct.key_tile_N = None
-                        adj_tile.key_tile_N = opp(ct.previous[0])
-                    elif ct.key_tile_N != ct.previous[0]: adj_tile.key_tile_N = opp(ct.previous[0])
+                if ct.new_kt_W: 
+                    ct.key_tile_W = None
+                    adj_tile.key_tile_W = opp(ct.previous[0])
+                else: ct.key_tile_W = ct.previous[0]
 
-                    if ct.new_kt_E or (ct.original_seed and ct.key_tile_E == None): 
-                        ct.key_tile_E = None
-                        adj_tile.key_tile_E = opp(ct.previous[0])
-                    elif ct.key_tile_E != ct.previous[0]: adj_tile.key_tile_E = opp(ct.previous[0])
+                if ct.new_kt_S: 
+                    ct.key_tile_S = None
+                    adj_tile.key_tile_S = opp(ct.previous[0])
+                else: ct.key_tile_S = ct.previous[0]
 
-                    if ct.new_kt_W or (ct.original_seed and ct.key_tile_W == None): 
-                        ct.key_tile_W = None
-                        adj_tile.key_tile_W = opp(ct.previous[0])
-                    elif ct.key_tile_W != ct.previous[0]: adj_tile.key_tile_W = opp(ct.previous[0])
-                    
-                    if ct.new_kt_S or (ct.original_seed and ct.key_tile_S == None): 
-                        ct.key_tile_S = None
-                        adj_tile.key_tile_S = opp(ct.previous[0])
-                    elif ct.key_tile_S != ct.previous[0]: adj_tile.key_tile_S = opp(ct.previous[0])
-
-                # Update adjacent
-                l = list(adj_tile.copy_direction)
-                l[1] = int(l[1]) - 1
-
-                if adj_tile.original_seed: 
-                    # Reset the seed
-                    reset_tile(adj_tile)
-                    
-                    if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = None 
-                    if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = None 
-                    if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = None 
-                    if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = None 
-
-                elif l[1]+1 == 1 and adj_tile.previous != None: 
-
-                    if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = adj_tile.previous[0]
-                    if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = adj_tile.previous[0]
-                    if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = adj_tile.previous[0]
-                    if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = adj_tile.previous[0]
-                    adj_tile.copy_direction = 'R'
-                    hard_reset_tiles.append(adj_tile)
-                elif l[1]+1 == 1 and adj_tile.previous == None: 
-                    update_prev_next(adj_tile)
-                   
-                    if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = adj_tile.previous[0]
-                    if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = adj_tile.previous[0]
-                    if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = adj_tile.previous[0]
-                    if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = adj_tile.previous[0]
-                    adj_tile.copy_direction = 'R'
-                    hard_reset_tiles.append(adj_tile)
-                else: 
-                    l[1] = str(l[1])
-                    adj_tile.copy_direction = "".join(l) 
-
-                ct.new_kt_N = False
-                ct.new_kt_E = False
-                ct.new_kt_W = False
-                ct.new_kt_S = False
-
+            #   Cur_tile is not terminal
             else:
                 if ct.new_kt_N: 
                     ct.key_tile_N = None
@@ -699,20 +696,101 @@ def hard_reset():
                     adj_tile.key_tile_S = opp(ct.previous[0])
                 elif ct.key_tile_S != ct.previous[0]: adj_tile.key_tile_S = opp(ct.previous[0])
 
-                # Update adjacent
-                l = list(adj_tile.copy_direction)
-                l[1] = int(l[1]) - 1
+            # Update adjacent
+            l = list(adj_tile.copy_direction)
+            l[1] = int(l[1]) - 1
 
-                if l[1]+1 == 1:
-                    reset_tile(adj_tile)
-                    
-                    if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = None 
-                    if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = None 
-                    if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = None 
-                    if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = None 
-                else: 
-                    l[1] = str(l[1])
-                    adj_tile.copy_direction = "".join(l) 
+            if adj_tile.original_seed: 
+                # Reset the seed
+                reset_tile(adj_tile)
+                
+                if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = None 
+                if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = None 
+                if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = None 
+                if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = None 
+
+            elif l[1]+1 == 1 and adj_tile.previous != None: 
+
+                if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = adj_tile.previous[0]
+                if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = adj_tile.previous[0]
+                if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = adj_tile.previous[0]
+                if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = adj_tile.previous[0]
+                adj_tile.copy_direction = 'R'
+                hard_reset_tiles.append(adj_tile)
+            elif l[1]+1 == 1 and adj_tile.previous == None: 
+                update_prev_next(adj_tile)
+                
+                if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = adj_tile.previous[0]
+                if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = adj_tile.previous[0]
+                if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = adj_tile.previous[0]
+                if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = adj_tile.previous[0]
+                adj_tile.copy_direction = 'R'
+                hard_reset_tiles.append(adj_tile)
+            else: 
+                l[1] = str(l[1])
+                adj_tile.copy_direction = "".join(l) 
+
+            ct.new_kt_N = False
+            ct.new_kt_E = False
+            ct.new_kt_W = False
+            ct.new_kt_S = False
+
+        else:
+            if ct.terminal:
+                if ct.new_kt_N: 
+                    ct.key_tile_N = None
+                    adj_tile.key_tile_N = opp(ct.previous[0])
+                else: ct.key_tile_N = ct.previous[0]
+
+                if ct.new_kt_E: 
+                    ct.key_tile_E = None
+                    adj_tile.key_tile_E = opp(ct.previous[0])
+                else: ct.key_tile_E = ct.previous[0]
+
+                if ct.new_kt_W: 
+                    ct.key_tile_W = None
+                    adj_tile.key_tile_W = opp(ct.previous[0])
+                else: ct.key_tile_W = ct.previous[0]
+
+                if ct.new_kt_S: 
+                    ct.key_tile_S = None
+                    adj_tile.key_tile_S = opp(ct.previous[0])
+                else: ct.key_tile_S = ct.previous[0]
+            else: 
+                if ct.new_kt_N: 
+                    ct.key_tile_N = None
+                    adj_tile.key_tile_N = opp(ct.previous[0])
+                elif ct.key_tile_N != ct.previous[0]: adj_tile.key_tile_N = opp(ct.previous[0])
+
+                if ct.new_kt_E or (ct.original_seed and ct.key_tile_E == None): 
+                    ct.key_tile_E = None
+                    adj_tile.key_tile_E = opp(ct.previous[0])
+                elif ct.key_tile_E != ct.previous[0]: adj_tile.key_tile_E = opp(ct.previous[0])
+
+                if ct.new_kt_W or (ct.original_seed and ct.key_tile_W == None): 
+                    ct.key_tile_W = None
+                    adj_tile.key_tile_W = opp(ct.previous[0])
+                elif ct.key_tile_W != ct.previous[0]: adj_tile.key_tile_W = opp(ct.previous[0])
+                
+                if ct.new_kt_S or (ct.original_seed and ct.key_tile_S == None): 
+                    ct.key_tile_S = None
+                    adj_tile.key_tile_S = opp(ct.previous[0])
+                elif ct.key_tile_S != ct.previous[0]: adj_tile.key_tile_S = opp(ct.previous[0])
+
+            # Update adjacent
+            l = list(adj_tile.copy_direction)
+            l[1] = int(l[1]) - 1
+
+            if l[1]+1 == 1:
+                reset_tile(adj_tile)
+                
+                if adj_tile.key_tile_N == '*': adj_tile.key_tile_N = None 
+                if adj_tile.key_tile_E == '*': adj_tile.key_tile_E = None 
+                if adj_tile.key_tile_W == '*': adj_tile.key_tile_W = None 
+                if adj_tile.key_tile_S == '*': adj_tile.key_tile_S = None 
+            else: 
+                l[1] = str(l[1])
+                adj_tile.copy_direction = "".join(l) 
 
         # print("Current: ", ct.next, ct.previous, ct.key_tile_N, ct.key_tile_E, ct.key_tile_W, ct.key_tile_S, ct.copy_direction)
         # print("--- Adj:", adj_tile.next, adj_tile.previous, adj_tile.key_tile_N, adj_tile.key_tile_E, adj_tile.key_tile_W, adj_tile.key_tile_S, adj_tile.copy_direction)
@@ -820,6 +898,12 @@ def copy_tile(tile, d, ps):
             if tile.key_tile_S[0] == 'W': tile.W = 'M'
             if tile.key_tile_S[0] == 'S': tile.S = 'M'
 
+            tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+            tile_to_place.new_p = ['S']
+            if tile.new_n == None: tile.new_n = ['N']
+            else: tile.new_n.append('N')
+            # tile.new_p = copy.copy(tile.previous)
+
         else: 
             adj_tile = tile.tile_to_N
             adj_tile.S = 'W'
@@ -859,6 +943,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'N')
@@ -903,6 +990,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'E')
 
@@ -945,6 +1035,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'W')
 
@@ -986,6 +1079,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'S')
@@ -1330,6 +1426,12 @@ def copy_tile(tile, d, ps):
             if tile.key_tile_W[0] == 'E': tile.E = 'M'
             if tile.key_tile_W[0] == 'W': tile.W = 'M'
             if tile.key_tile_W[0] == 'S': tile.S = 'M'
+
+            tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+            tile_to_place.new_p = ['W']
+            if tile.new_n == None: tile.new_n = ['E']
+            else: tile.new_n.append('E')
+            # tile.new_p = copy.copy(tile.previous)
         
         else:
             adj_tile = tile.tile_to_E
@@ -1371,6 +1473,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'N')
@@ -1415,6 +1520,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'E')
 
@@ -1457,6 +1565,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'W')
 
@@ -1498,6 +1609,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'S')
@@ -1838,6 +1952,12 @@ def copy_tile(tile, d, ps):
             if tile.key_tile_E[0] == 'W': tile.W = 'M'
             if tile.key_tile_E[0] == 'S': tile.S = 'M'
 
+            tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+            tile_to_place.new_p = ['E']
+            if tile.new_n == None: tile.new_n = ['W']
+            else: tile.new_n.append('W')
+            # tile.new_p = copy.copy(tile.previous)
+
         else: 
             adj_tile = tile.tile_to_W
             adj_tile.E = 'W'
@@ -1877,6 +1997,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'N')
@@ -1921,6 +2044,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'E')
 
@@ -1963,6 +2089,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'W')
 
@@ -2004,6 +2133,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'S')
@@ -2343,6 +2475,12 @@ def copy_tile(tile, d, ps):
             if tile.key_tile_N[0] == 'W': tile.W = 'M'
             if tile.key_tile_N[0] == 'S': tile.S = 'M'
 
+            tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+            tile_to_place.new_p = ['N']
+            if tile.new_n == None: tile.new_n = ['S']
+            else: tile.new_n.append('S')
+            # tile.new_p = copy.copy(tile.previous)
+
         else: 
             adj_tile = tile.tile_to_S
             adj_tile.N = 'W'
@@ -2382,6 +2520,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'N')
@@ -2426,6 +2567,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'E')
 
@@ -2468,6 +2612,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
 
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
+
                     else: 
                         neighbor = retrieve_tile(tile, 'W')
 
@@ -2509,6 +2656,9 @@ def copy_tile(tile, d, ps):
                         elif tile.previous[0] == 'E': tile.E = 'M'
                         elif tile.previous[0] == 'W': tile.W = 'M'
                         elif tile.previous[0] == 'S': tile.S = 'M'
+
+                        tile_to_place.new_n = copy.deepcopy(tile_to_place.next)
+                        tile_to_place.new_p = copy.deepcopy(tile_to_place.previous)
 
                     else: 
                         neighbor = retrieve_tile(tile, 'S')
@@ -3078,6 +3228,8 @@ def copy_assembly(tile, d):
 
 # Run simulation -----------------------------------------------------------------------------------
 def run_simulation(seed_tile, stage):
+    original_seed_tile = copy.deepcopy(seed_tile)
+
     current_stage = 1
     # dir = []
     while current_stage < stage:
@@ -3116,4 +3268,14 @@ def run_simulation(seed_tile, stage):
         # reset_keytile_directions(seed_tile)
         current_stage += 1
 
-    return seed_tile
+    for [s1, s2, s1_final, s2_final, _] in transitions:
+        if s1 not in states: states.append(s1)
+        if s2 not in states: states.append(s2)
+        if s1_final not in states: states.append(s1_final)
+        if s2_final not in states: states.append(s2_final)
+
+    # print(states)
+    # print(transitions)
+    # print(affinities)
+
+    return [seed_tile, states, transitions, affinities, original_seed_tile]
