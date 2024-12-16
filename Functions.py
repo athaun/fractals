@@ -54,6 +54,13 @@ class Tile():
     # Is tile terminal
     terminal = False
 
+    # The new previous and next for tile
+    new_p = None
+    new_n = None
+
+    # If first tile copied
+    first_tile = False
+
     # For seeds, number of times subassembly has been copied
     num_times_copied = 0
 
@@ -180,6 +187,24 @@ def generate_transfer_state(tile):
     if tile.terminal: state += 'T|'
     else: state += 'F|'
 
+    # First tile
+    if tile.first_tile: state += 'T|'
+    else: state += 'F|'
+
+    # New next for tile
+    if tile.new_n == None: state += "*|"
+    else:
+        for neighbor in tile.new_n: 
+            state += neighbor
+        state += '|'
+
+    # New previous for tile
+    if tile.new_p == None: state += "*|"
+    else:
+        for neighbor in tile.new_p: 
+            state += neighbor
+        state += '|'
+
     # Number of times copied
     state += str(tile.num_times_copied)
 
@@ -287,7 +312,7 @@ def generate_state(tile):
     else: state += tile.key_tile_W[0]
 
     if tile.key_tile_S == None: state += '*.'
-    else: state += tile.key_tile_S[0]
+    else: state += tile.key_tile_S[0] + '.'
 
     # Copied
     if tile.copied: state += 'T.'
@@ -296,6 +321,24 @@ def generate_state(tile):
     # Terminal
     if tile.terminal: state += 'T.'
     else: state += 'F.'
+
+    # First tile
+    if tile.first_tile: state += 'T.'
+    else: state += 'F.'
+
+    # New next for tile
+    if tile.new_n == None: state += "*."
+    else:
+        for neighbor in tile.new_n: 
+            state += neighbor
+        state += '.'
+
+    # New previous for tile
+    if tile.new_p == None: state += "*."
+    else:
+        for neighbor in tile.new_p: 
+            state += neighbor
+        state += '.'
 
     # Number of times copied
     state += str(tile.num_times_copied)

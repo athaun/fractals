@@ -77,7 +77,7 @@ def generate_state(tile):
 
     # Transfer
     if tile.transfer == None: state += '*.'
-    else: state += tile.transfer + '.'
+    else: state += fl.generate_transfer_state(tile.transfer) + '.'
 
     # Pseudo seed
     if tile.pseudo_seed: state += 'T.'
@@ -102,7 +102,7 @@ def generate_state(tile):
     else: state += tile.key_tile_W[0]
 
     if tile.key_tile_S == None: state += '*.'
-    else: state += tile.key_tile_S[0]
+    else: state += tile.key_tile_S[0] + '.'
 
     # Copied
     if tile.copied: state += 'T.'
@@ -111,6 +111,24 @@ def generate_state(tile):
     # Terminal
     if tile.terminal: state += 'T.'
     else: state += 'F.'
+
+    # First tile
+    if tile.first_tile: state += 'T.'
+    else: state += 'F.'
+
+    # New next for tile
+    if tile.new_n == None: state += "*."
+    else:
+        for neighbor in tile.new_n: 
+            state += neighbor
+        state += '.'
+
+    # New previous for tile
+    if tile.new_p == None: state += "*."
+    else:
+        for neighbor in tile.new_p: 
+            state += neighbor
+        state += '.'
 
     # Number of times copied
     state += str(tile.num_times_copied)
@@ -153,76 +171,76 @@ def generate_xml_file(states, transitions, affinities, seed):
     path = r"Output/Output.xml"
     
     # Open and write to this file
-    f = open(path, 'w+')
-    f.write('<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<System Temp="1"><AllStates>')
-    for s in states: 
-        # color = get_state_color(s)
-        f.write('<State Label="%s" Color="ffffff" DisplayLabel="%s" DisplayLabelFont="Fira Code Regular Nerd Font Complete Mono" DisplayLabelColor="ffffff" />' % (s, s))
-    f.write('</AllStates><InitialStates>')
-    for s in states:  
-        # color = get_state_color(s)
-        f.write('<State Label="%s" Color="ffffff" DisplayLabel="%s" DisplayLabelFont="Fira Code Regular Nerd Font Complete Mono" DisplayLabelColor="ffffff" />' % (s, s))
-    f.write('</InitialStates><SeedStates>')
+    with open(path, 'w+') as f:
+        f.write('<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<System Temp="1"><AllStates>')
+        for s in states: 
+            # color = get_state_color(s)
+            f.write('<State Label="%s" Color="ffffff" DisplayLabel="%s" DisplayLabelFont="Fira Code Regular Nerd Font Complete Mono" DisplayLabelColor="ffffff" />' % (s, s))
+        f.write('</AllStates><InitialStates>')
+        for s in states:  
+            # color = get_state_color(s)
+            f.write('<State Label="%s" Color="ffffff" DisplayLabel="%s" DisplayLabelFont="Fira Code Regular Nerd Font Complete Mono" DisplayLabelColor="ffffff" />' % (s, s))
+        f.write('</InitialStates><SeedStates>')
 
-    stack = [seed]
-    visited_tiles = []
-    while len(stack) > 0:
-        cur_tile = stack.pop()
-        f.write('<State Label="%s" Color="ffffff" DisplayLabel="%s" DisplayLabelFont="Fira Code Regular Nerd Font Complete Mono" DisplayLabelColor="ffffff" />' % (generate_state(cur_tile), generate_state(cur_tile)))
+        stack = [seed]
+        visited_tiles = []
+        while len(stack) > 0:
+            cur_tile = stack.pop()
+            f.write('<State Label="%s" Color="ffffff" DisplayLabel="%s" DisplayLabelFont="Fira Code Regular Nerd Font Complete Mono" DisplayLabelColor="ffffff" />' % (generate_state(cur_tile), generate_state(cur_tile)))
 
-        if cur_tile.next != None:
-            for neighbor in cur_tile.next:
-                if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: stack.append(fl.retrieve_tile(cur_tile, neighbor))
+            if cur_tile.next != None:
+                for neighbor in cur_tile.next:
+                    if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: stack.append(fl.retrieve_tile(cur_tile, neighbor))
 
-        if cur_tile.previous != None:
-            for neighbor in cur_tile.previous:
-                if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: stack.append(fl.retrieve_tile(cur_tile, neighbor))
+            if cur_tile.previous != None:
+                for neighbor in cur_tile.previous:
+                    if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: stack.append(fl.retrieve_tile(cur_tile, neighbor))
 
-        visited_tiles.append(cur_tile)
-    
-    f.write('</SeedStates><Tiles>')
+            visited_tiles.append(cur_tile)
+        
+        f.write('</SeedStates><Tiles>')
 
-    stack = [[seed, 0, 0]]
-    visited_tiles = []
-    while len(stack) > 0:
-        [cur_tile, x, y] = stack.pop()
-        f.write('<Tile Label="%s" Color="ffffff" x="%i" y="%i" DisplayLabel="%s" DisplayLabelFont="ffffff" DisplayLabelColor="ffffff" />' % (generate_state(cur_tile), x, y, generate_state(cur_tile)))
+        stack = [[seed, 0, 0]]
+        visited_tiles = []
+        while len(stack) > 0:
+            [cur_tile, x, y] = stack.pop()
+            f.write('<Tile Label="%s" Color="ffffff" x="%i" y="%i" DisplayLabel="%s" DisplayLabelFont="ffffff" DisplayLabelColor="ffffff" />' % (generate_state(cur_tile), x, y, generate_state(cur_tile)))
 
-        if cur_tile.next != None:
-            for neighbor in cur_tile.next:
-                if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: 
-                    if neighbor == 'N': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y+1])
-                    if neighbor == 'E': stack.append([fl.retrieve_tile(cur_tile, neighbor), x+1, y])
-                    if neighbor == 'W': stack.append([fl.retrieve_tile(cur_tile, neighbor), x-1, y])
-                    if neighbor == 'S': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y-1])
+            if cur_tile.next != None:
+                for neighbor in cur_tile.next:
+                    if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: 
+                        if neighbor == 'N': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y+1])
+                        if neighbor == 'E': stack.append([fl.retrieve_tile(cur_tile, neighbor), x+1, y])
+                        if neighbor == 'W': stack.append([fl.retrieve_tile(cur_tile, neighbor), x-1, y])
+                        if neighbor == 'S': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y-1])
 
-        if cur_tile.previous != None:
-            for neighbor in cur_tile.previous:
-                if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: 
-                    if neighbor == 'N': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y+1])
-                    if neighbor == 'E': stack.append([fl.retrieve_tile(cur_tile, neighbor), x+1, y])
-                    if neighbor == 'W': stack.append([fl.retrieve_tile(cur_tile, neighbor), x-1, y])
-                    if neighbor == 'S': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y-1])
+            if cur_tile.previous != None:
+                for neighbor in cur_tile.previous:
+                    if fl.retrieve_tile(cur_tile, neighbor) not in visited_tiles: 
+                        if neighbor == 'N': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y+1])
+                        if neighbor == 'E': stack.append([fl.retrieve_tile(cur_tile, neighbor), x+1, y])
+                        if neighbor == 'W': stack.append([fl.retrieve_tile(cur_tile, neighbor), x-1, y])
+                        if neighbor == 'S': stack.append([fl.retrieve_tile(cur_tile, neighbor), x, y-1])
 
-        visited_tiles.append(cur_tile)
+            visited_tiles.append(cur_tile)
 
-    f.write('</Tiles><VerticalTransitions>')
-    for [t1, t2, t1_transition, t2_transition, _] in vertical_transitions: 
-        f.write('<Rule Label1="%s" Label2="%s" Label1Final="%s" Label2Final="%s" />' % (t1, t2, t1_transition, t2_transition))
+        f.write('</Tiles><VerticalTransitions>')
+        for [t1, t2, t1_transition, t2_transition, _] in vertical_transitions: 
+            f.write('<Rule Label1="%s" Label2="%s" Label1Final="%s" Label2Final="%s" />' % (t1, t2, t1_transition, t2_transition))
 
-    f.write('</VerticalTransitions><HorizontalTransitions>')
-    for [t1, t2, t1_transition, t2_transition, _] in horizontal_transitions: 
-        f.write('<Rule Label1="%s" Label2="%s" Label1Final="%s" Label2Final="%s" />' % (t1, t2, t1_transition, t2_transition))
+        f.write('</VerticalTransitions><HorizontalTransitions>')
+        for [t1, t2, t1_transition, t2_transition, _] in horizontal_transitions: 
+            f.write('<Rule Label1="%s" Label2="%s" Label1Final="%s" Label2Final="%s" />' % (t1, t2, t1_transition, t2_transition))
 
-    f.write('</HorizontalTransitions><VerticalAffinities>')
-    for [t1, t2, _, _] in vertical_affinities: 
-        f.write('<Rule Label1="%s" Label2="%s" Strength="1" />' % (t1, t2))
+        f.write('</HorizontalTransitions><VerticalAffinities>')
+        for [t1, t2, _, _] in vertical_affinities: 
+            f.write('<Rule Label1="%s" Label2="%s" Strength="1" />' % (t1, t2))
 
-    f.write('</VerticalAffinities><HorizontalAffinities>')
-    for [t1, t2, _, _] in horizontal_affinities: 
-        f.write('<Rule Label1="%s" Label2="%s" Strength="1" />' % (t1, t2))
+        f.write('</VerticalAffinities><HorizontalAffinities>')
+        for [t1, t2, _, _] in horizontal_affinities: 
+            f.write('<Rule Label1="%s" Label2="%s" Strength="1" />' % (t1, t2))
 
-    f.write('</HorizontalAffinities></System>')
+        f.write('</HorizontalAffinities></System>')
 
 # Testing File --------------------------------------------------------------------------------------------------
 # Sierpinski Triangle seed

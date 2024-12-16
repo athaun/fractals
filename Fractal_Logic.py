@@ -78,6 +78,9 @@ class Tile():
     new_p = None
     new_n = None
 
+    # If first tile copied
+    first_tile = False
+
 # RETURNS: opp(d) i.e if N -> S
 def opp(d):
     if d == "N": 
@@ -177,6 +180,10 @@ def copy_direction_update_tiles(cur_tile, direction):
     if not cur_tile.terminal and not (cur_tile.original_seed or cur_tile.pseudo_seed): cur_tile.copy_direction = direction + str(c)
     else: cur_tile.copy_direction = direction
 
+    if cur_tile.new_n == None and cur_tile.new_p == None: 
+        cur_tile.new_n = copy.deepcopy(cur_tile.next)
+        cur_tile.new_p = copy.deepcopy(cur_tile.previous)
+
     cur_tile.status = 'P'
     cur_tile.caps = []
 
@@ -199,10 +206,6 @@ def choose_copy_direction(tile, direction):
 
     while len(stack) > 0:
         cur_tile = stack.pop()
-
-        if cur_tile.new_n == None and cur_tile.new_p == None: 
-            cur_tile.new_n = copy.deepcopy(cur_tile.next)
-            cur_tile.new_p = copy.deepcopy(cur_tile.previous)
 
         # Generate transition rule -----
         t1 = fl.generate_state(cur_tile)
@@ -579,6 +582,7 @@ def reset_tile(ct):
 
     ct.new_n = None
     ct.new_p = None
+    ct.first_tile = False
 
     if num_next(ct)+1 == 1: ct.terminal = True
     else: ct.terminal = False
@@ -3035,6 +3039,7 @@ def copy_assembly(tile, d):
             tile = retrieve_tile(tile, tile.key_tile_N[0])
 
     starting_tile = tile
+    starting_tile.first_tile = True
     while not is_assembly_finished(starting_tile):
         # copy tile
         # print("------------------- copying tile: ", tile.next, tile.previous)
