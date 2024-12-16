@@ -308,7 +308,7 @@ class main(tk.Tk):
             [seed_tile, states, transitions, affinities, original_seed_tile] = fl.run_simulation(seed_tile, self.stages)
 
             # Output XML file
-            # g.generate_xml_file(states, transitions, affinities, original_seed_tile)
+            g.generate_xml_file(states, transitions, affinities, original_seed_tile)
 
             # Plot the result onto graph
             fl.plot_graph(seed_tile)
