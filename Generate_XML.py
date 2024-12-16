@@ -153,7 +153,7 @@ def generate_xml_file(states, transitions, affinities, seed):
     path = r"Output/Output.xml"
     
     # Open and write to this file
-    f = open(path, 'w')
+    f = open(path, 'w+')
     f.write('<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<System Temp="1"><AllStates>')
     for s in states: 
         # color = get_state_color(s)
