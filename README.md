@@ -29,6 +29,7 @@ Left click a tile to set it as the origin.
 ![image](https://github.com/user-attachments/assets/9b7fa562-f3b4-4e50-99dc-67a8fe3cf0a8)
 Select the number of stages to emulate.
 > Note: I am currently improving efficiency to allow for larger simulations.
+
 ![image](https://github.com/user-attachments/assets/f39e7e7f-9f8f-4746-a836-ded3dfb6555c)
 ![image](https://github.com/user-attachments/assets/d626bcc5-841c-4992-b73b-91fd29a0c735)
 
